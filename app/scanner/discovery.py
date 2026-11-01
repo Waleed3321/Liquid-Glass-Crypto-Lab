@@ -13,32 +13,62 @@ logger = get_logger(__name__)
 CHAINS = ("solana", "bsc")
 
 
+def _in_window(pools: list[PoolDiscovery], window_start: datetime) -> list[PoolDiscovery]:
+    seen: set[str] = set()
+    inside: list[PoolDiscovery] = []
+    for pool in pools:
+        if not pool.pool_address or not pool.token_address:
+            continue
+        if pool.created_at is None or pool.created_at < window_start:
+            continue
+        key = f"{pool.chain}:{pool.pool_address}"
+        if key in seen:
+            continue
+        seen.add(key)
+        inside.append(pool)
+    return inside
+
+
 async def discover_new_pools(
-    providers: Providers, *, window_start: datetime, pages: int = 2
+    providers: Providers, *, window_start: datetime, pages: int = 1
 ) -> tuple[list[PoolDiscovery], list[str]]:
-    """Return pools created inside the window plus provider error messages."""
+    """Return pools created inside the window plus provider error messages.
+
+    GeckoTerminal is primary. When it is unavailable or returns nothing for a
+    chain (it rate-limits shared egress IPs), DEX Screener's newest profiles are
+    used as a fallback so both chains keep discovering new coins.
+    """
     results: list[PoolDiscovery] = []
     errors: list[str] = []
-    if providers.geckoterminal is None:
-        return results, ["GeckoTerminal provider is not configured"]
 
     for chain in CHAINS:
-        try:
-            pools = await providers.geckoterminal.new_pools(chain, pages=pages)
-        except Exception as exc:  # provider failure must not abort the tick
-            logger.warning("discovery_failed", extra={"chain": chain, "error": str(exc)})
-            errors.append(f"{chain}: {exc}")
-            continue
+        pools: list[PoolDiscovery] = []
+        if providers.geckoterminal is not None:
+            try:
+                pools = await providers.geckoterminal.new_pools(chain, pages=pages)
+            except Exception as exc:  # provider failure must not abort the tick
+                logger.warning("discovery_failed", extra={"chain": chain, "error": str(exc)})
+                errors.append(f"{chain}: {exc}")
+        else:
+            errors.append("GeckoTerminal provider is not configured")
 
-        seen: set[str] = set()
-        for pool in pools:
-            if not pool.pool_address or not pool.token_address:
-                continue
-            if pool.created_at is None or pool.created_at < window_start:
-                continue
-            key = f"{pool.chain}:{pool.pool_address}"
-            if key in seen:
-                continue
-            seen.add(key)
-            results.append(pool)
+        inside = _in_window(pools, window_start)
+        if not inside and providers.dexscreener is not None:
+            try:
+                fallback = await providers.dexscreener.new_pools(
+                    chain, window_start=window_start
+                )
+                inside = _in_window(fallback, window_start)
+                if inside:
+                    logger.info(
+                        "discovery_fallback_used",
+                        extra={"chain": chain, "pools": len(inside)},
+                    )
+            except Exception as exc:  # noqa: BLE001 - fallback is best effort
+                logger.warning(
+                    "discovery_fallback_failed", extra={"chain": chain, "error": str(exc)}
+                )
+                errors.append(f"{chain}: dexscreener {exc}")
+
+        results.extend(inside)
     return results, errors

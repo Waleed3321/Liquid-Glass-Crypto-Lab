@@ -80,6 +80,7 @@ class TickResult:
     errors: int = 0
     duration_ms: int = 0
     error_summary: str | None = None
+    timings: dict[str, int] = field(default_factory=dict)
     trades: list[dict[str, Any]] = field(default_factory=list)
 
     def as_dict(self) -> dict[str, Any]:
@@ -97,6 +98,7 @@ class TickResult:
             "errors": self.errors,
             "duration_ms": self.duration_ms,
             "error_summary": self.error_summary,
+            "timings": self.timings,
             "trades": self.trades,
         }
 
@@ -159,6 +161,14 @@ class ScannerEngine:
     async def tick(self, source: str = "loop") -> TickResult:
         started = time.perf_counter()
         result = TickResult()
+        lap_at = started
+
+        def lap(name: str) -> None:
+            nonlocal lap_at
+            now = time.perf_counter()
+            result.timings[name] = int((now - lap_at) * 1000)
+            lap_at = now
+
         cfg = StrategyConfig()
         scan_cfg: dict[str, Any] = {}
         notif_cfg: dict[str, Any] = {}
@@ -180,9 +190,12 @@ class ScannerEngine:
             window_start = now - timedelta(hours=float(scan_cfg.get("discovery_window_hours", 6.0)))
 
             pools, discovery_errors = await discover_new_pools(
-                self.providers, window_start=window_start
+                self.providers,
+                window_start=window_start,
+                pages=settings.gt_discovery_pages,
             )
             result.errors += len(discovery_errors)
+            lap("discovery_ms")
 
             new_token_ids: list[int] = []
             async with session_scope() as session:
@@ -193,6 +206,7 @@ class ScannerEngine:
                     if existing is None:
                         new_token_ids.append(token.id)
                         result.discovered += 1
+            lap("ingest_ms")
 
             async with session_scope() as session:
                 selected, _positions = await select_candidates(
@@ -210,17 +224,20 @@ class ScannerEngine:
             )
             result.errors += len(enrich_errors)
             result.enriched = sum(len(items) for items in quotes_by_address.values())
+            lap("enrich_ms")
 
             candidates = await self._materialise(
                 selected_ids, quotes_by_address, run_id=result.run_id, now=now
             )
             result.snapshots = len(candidates)
+            lap("snapshot_ms")
 
             async with session_scope() as session:
                 account = await TradingRepository(session).account()
                 available_cash = float(account.cash_balance) if account else 0.0
 
             assessments = await self._assess(candidates, cfg)
+            lap("security_ms")
             plans = self._plan(candidates, assessments, cfg, limits, available_cash)
 
             trades = await self._execute(plans, limits)
@@ -236,8 +253,10 @@ class ScannerEngine:
                 if t["side"] == "SELL" and not t.get("duplicate") and not t.get("skipped")
             )
             result.skipped = sum(1 for t in trades if t.get("skipped"))
+            lap("trade_ms")
 
             await self._persist(plans, result, cfg, notif_cfg, limits)
+            lap("persist_ms")
 
             if discovery_errors or enrich_errors:
                 result.status = ScannerRunStatus.DEGRADED.value
@@ -332,7 +351,8 @@ class ScannerEngine:
 
         # Positions first, then the rest; keep provider usage inside the budget.
         refresh.sort(key=lambda c: (c.position is None, c.token.symbol))
-        for candidate in refresh[:10]:
+        budget = max(1, settings.scanner_security_refresh_per_tick)
+        for candidate in refresh[:budget]:
             try:
                 assessment, _gp, _rc = await check_token(
                     self.providers, candidate.token.chain, candidate.token.address

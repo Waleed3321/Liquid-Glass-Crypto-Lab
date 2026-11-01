@@ -76,7 +76,7 @@ def env_vars(require_secrets: bool = True) -> list[dict[str, str]]:
         "SCAN_INTERVAL_SECONDS": "60",
         "DISCOVERY_WINDOW_HOURS": "6",
         "MIN_TICK_GAP_SECONDS": "45",
-        "LEASE_TTL_SECONDS": "120",
+        "LEASE_TTL_SECONDS": "300",
         "DISCORD_ENABLED": "true",
         "SOL_PRICE_USD": "150",
         "BNB_PRICE_USD": "600",

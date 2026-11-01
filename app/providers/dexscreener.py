@@ -3,10 +3,11 @@
 from __future__ import annotations
 
 import logging
+from datetime import datetime
 from typing import Any
 
 from app.core.clock import from_iso_timestamp
-from app.providers.base import MarketQuote, to_float, to_int
+from app.providers.base import MarketQuote, PoolDiscovery, to_float, to_int
 from app.providers.cache import AsyncTTLCache
 from app.providers.http import ProviderHTTP
 
@@ -49,6 +50,63 @@ class DexScreenerProvider:
                 if quote:
                     quotes.append(quote)
         return quotes
+
+    async def new_pools(
+        self, chain: str, *, limit: int = 20, window_start: datetime | None = None
+    ) -> list[PoolDiscovery]:
+        """Fallback discovery from the latest token profiles.
+
+        GeckoTerminal rate-limits whole shared egress IPs (Render's included), so
+        a chain's primary discovery can fail for minutes. DEX Screener publishes
+        the newest token profiles, which we hydrate into pairs with ``quotes``.
+        """
+        profiles = await self.cache.get_or_set(
+            "ds:token-profiles",
+            self.ttl,
+            lambda: self.http.get_json("/token-profiles/latest/v1"),
+        )
+        addresses: list[str] = []
+        for item in profiles or []:
+            if str(item.get("chainId") or "") != chain:
+                continue
+            address = item.get("tokenAddress")
+            if address and address not in addresses:
+                addresses.append(str(address))
+            if len(addresses) >= limit:
+                break
+        if not addresses:
+            return []
+
+        pools: list[PoolDiscovery] = []
+        for quote in await self.quotes(addresses):
+            if quote.chain != chain or not quote.pool_address:
+                continue
+            if quote.created_at is None:
+                continue
+            if window_start is not None and quote.created_at < window_start:
+                continue
+            pools.append(
+                PoolDiscovery(
+                    chain=quote.chain,
+                    token_address=quote.token_address,
+                    pool_address=quote.pool_address,
+                    symbol=quote.symbol,
+                    name=quote.name,
+                    dex_id=quote.dex_id,
+                    quote_symbol=quote.quote_symbol,
+                    created_at=quote.created_at,
+                    price_usd=quote.price_usd,
+                    liquidity_usd=quote.liquidity_usd,
+                    market_cap_usd=quote.market_cap_usd,
+                    fdv_usd=quote.fdv_usd,
+                    volume=dict(quote.volume),
+                    txns={window: dict(values) for window, values in quote.txns.items()},
+                    price_change=dict(quote.price_change),
+                    raw=dict(quote.raw),
+                    source="dexscreener",
+                )
+            )
+        return pools
 
     async def search(self, query: str) -> list[MarketQuote]:
         payload = await self.cache.get_or_set(

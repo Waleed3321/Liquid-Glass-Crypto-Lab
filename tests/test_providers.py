@@ -185,3 +185,98 @@ async def test_geckoterminal_keeps_first_page_when_later_page_is_rate_limited():
     assert [p.pool_address for p in pools] == ["pool-one"]
     assert calls["page2"] == 2  # one courtesy retry, then the page is skipped
     await client.aclose()
+
+
+async def test_dexscreener_profiles_fill_in_for_a_rate_limited_chain():
+    from datetime import UTC, datetime, timedelta
+
+    from app.providers.dexscreener import DexScreenerProvider
+
+    profiles = [
+        {"chainId": "bsc", "tokenAddress": "0xTokenBsc"},
+        {"chainId": "bsc", "tokenAddress": "0xOldBsc"},
+        {"chainId": "solana", "tokenAddress": "SolToken"},
+    ]
+    fresh = (datetime.now(UTC) - timedelta(minutes=30)).strftime("%Y-%m-%dT%H:%M:%S.000Z")
+    stale = (datetime.now(UTC) - timedelta(hours=9)).strftime("%Y-%m-%dT%H:%M:%S.000Z")
+
+    def pair(address: str, created: str) -> dict:
+        return {
+            "chainId": "bsc",
+            "pairAddress": f"pool-{address}",
+            "baseToken": {"address": address, "symbol": "NEW", "name": "New Coin"},
+            "quoteToken": {"symbol": "WBNB"},
+            "dexId": "pancakeswap",
+            "priceUsd": "0.001",
+            "pairCreatedAt": created,
+            "liquidity": {"usd": 12000},
+            "volume": {"h1": 5000},
+            "txns": {"h1": {"buys": 10, "sells": 4}},
+            "priceChange": {"h1": 8.0},
+        }
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        if request.url.path == "/token-profiles/latest/v1":
+            return httpx.Response(200, json=profiles)
+        return httpx.Response(
+            200,
+            json={
+                "pairs": [
+                    pair("0xTokenBsc", fresh),
+                    pair("0xOldBsc", stale),
+                ]
+            },
+        )
+
+    http, client = _http(handler)
+    provider = DexScreenerProvider(http, AsyncTTLCache(), ttl_seconds=1)
+    pools = await provider.new_pools(
+        "bsc", window_start=datetime.now(UTC) - timedelta(hours=6)
+    )
+    assert [p.pool_address for p in pools] == ["pool-0xTokenBsc"]
+    assert pools[0].source == "dexscreener"
+    assert pools[0].symbol == "NEW"
+    await client.aclose()
+
+
+async def test_discovery_uses_dexscreener_when_geckoterminal_fails():
+    from datetime import UTC, datetime, timedelta
+
+    from app.providers.base import PoolDiscovery
+    from app.providers.registry import Providers
+    from app.scanner.discovery import discover_new_pools
+
+    created = datetime.now(UTC) - timedelta(minutes=15)
+
+    class BrokenGecko:
+        async def new_pools(self, chain: str, pages: int = 1):
+            raise RateLimitedError("geckoterminal rate limited")
+
+    class Fallback:
+        async def new_pools(self, chain: str, *, limit: int = 20, window_start=None):
+            if chain != "bsc":
+                return []
+            return [
+                PoolDiscovery(
+                    chain="bsc",
+                    token_address="0xFALLBACK",
+                    pool_address="pool-fallback",
+                    symbol="FB",
+                    name="Fallback",
+                    dex_id="pancakeswap",
+                    quote_symbol="WBNB",
+                    created_at=created,
+                    price_usd=1.0,
+                    liquidity_usd=5000.0,
+                    market_cap_usd=0.0,
+                    fdv_usd=0.0,
+                    source="dexscreener",
+                )
+            ]
+
+    providers = Providers(geckoterminal=BrokenGecko(), dexscreener=Fallback())
+    pools, errors = await discover_new_pools(
+        providers, window_start=datetime.now(UTC) - timedelta(hours=6)
+    )
+    assert [p.pool_address for p in pools] == ["pool-fallback"]
+    assert errors and "geckoterminal rate limited" in errors[0]

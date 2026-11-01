@@ -44,4 +44,4 @@ services:
       - key: MIN_TICK_GAP_SECONDS
         value: "45"
       - key: LEASE_TTL_SECONDS
-        value: "120"
+        value: "300"

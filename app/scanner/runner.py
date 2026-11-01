@@ -45,6 +45,7 @@ class ScannerRunner:
         self.last_result: dict[str, Any] | None = None
         self.consecutive_failures = 0
         self.interval_seconds = settings.scan_interval_seconds
+        self.tick_timeout_seconds = settings.scanner_tick_timeout_seconds
         self.enabled = settings.scanner_enabled
 
     # ------------------------------------------------------------------
