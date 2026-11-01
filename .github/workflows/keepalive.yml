@@ -1,8 +1,8 @@
 name: keepalive
 
-# Keeps the free Render instance awake and guarantees a scanner tick even if
-# the in-process loop was suspended. Runs entirely in the cloud; nothing here
-# depends on a developer machine.
+# Keeps the free Render instance awake. The in-process 60 s scanner loop does the
+# ticking; the optional tick step is a safety net when SCANNER_TICK_TOKEN is set.
+# Everything runs in the cloud; no developer machine is involved.
 
 on:
   schedule:
@@ -13,6 +13,10 @@ concurrency:
   group: keepalive
   cancel-in-progress: false
 
+env:
+  # Override with a repository variable if the service URL ever changes.
+  API_BASE_URL: ${{ vars.API_BASE_URL || 'https://liquid-glass-crypto-lab.onrender.com' }}
+
 jobs:
   ping:
     runs-on: ubuntu-latest
@@ -20,16 +24,24 @@ jobs:
     steps:
       - name: Health check
         run: |
-          code=$(curl -sS -o health.json -w "%{http_code}" --max-time 60 "${{ secrets.API_BASE_URL }}/api/v1/health")
-          cat health.json || true
-          test "$code" = "200"
+          for attempt in 1 2 3; do
+            code=$(curl -sS -o health.json -w "%{http_code}" --max-time 120 "$API_BASE_URL/api/v1/health") || true
+            cat health.json 2>/dev/null || true
+            if [ "$code" = "200" ]; then exit 0; fi
+            echo "attempt $attempt returned $code; retrying"
+            sleep 15
+          done
+          exit 1
 
       - name: Scanner tick
         env:
-          API_BASE_URL: ${{ secrets.API_BASE_URL }}
           SCANNER_TICK_TOKEN: ${{ secrets.SCANNER_TICK_TOKEN }}
         run: |
-          body=$(curl -sS -X POST --max-time 120 \
+          if [ -z "$SCANNER_TICK_TOKEN" ]; then
+            echo "SCANNER_TICK_TOKEN is not configured; the in-process loop already ticks."
+            exit 0
+          fi
+          body=$(curl -sS -X POST --max-time 180 \
             -H "X-Scan-Token: ${SCANNER_TICK_TOKEN}" \
             -H "Content-Type: application/json" \
             "${API_BASE_URL}/api/v1/scanner/tick")
