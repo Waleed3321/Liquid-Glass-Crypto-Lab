@@ -81,8 +81,8 @@ class Settings(BaseSettings):
     discovery_window_hours: float = 6.0
     min_tick_gap_seconds: int = 45
     scanner_tick_token: str = ""
-    scanner_candidates_per_tick: int = 10
-    scanner_security_refresh_per_tick: int = 5
+    scanner_candidates_per_tick: int = 8
+    scanner_security_refresh_per_tick: int = 4
     scanner_tick_timeout_seconds: int = 240
     gt_discovery_pages: int = 1
     ds_batch_size: int = 25

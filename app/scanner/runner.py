@@ -116,7 +116,7 @@ class ScannerRunner:
                 self.enabled = bool(scan_cfg.get("enabled", settings.scanner_enabled))
                 lease = await repo.get_lease()
                 last_tick = lease.last_tick_at if lease else None
-                if scan_cfg.get("enabled", True) and source != "manual":
+                if scan_cfg.get("enabled", True) and source == "cron":
                     gap = settings.min_tick_gap_seconds
                     if last_tick is not None and (utc_now() - last_tick) < timedelta(seconds=gap):
                         return self._skipped(f"Minimum tick gap of {gap}s not elapsed.")
