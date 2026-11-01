@@ -372,7 +372,8 @@ class TokenRepository:
         pair.price_change = data.price_change or {}
         pair.last_updated_at = now
         pair.is_active = True
-        await self.session.flush()
+        # No flush here: the scanner updates many pairs per tick and lets the
+        # session commit batch them into one round trip.
         return pair
 
     async def add_snapshot(
