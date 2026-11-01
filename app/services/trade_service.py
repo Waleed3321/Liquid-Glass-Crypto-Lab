@@ -143,18 +143,20 @@ async def execute_buy(request: BuyRequest, *, account_name: str = "default") -> 
         if snapshot is None:
             raise RiskLimitError("No market snapshot is available yet.", code=REASON_STALE_DATA)
 
-        checks = await tokens.latest_security([token.id])
-        check = checks.get(token.id)
-        assessment = assessment_from_check(check) if check is not None else None
-        check_security(assessment)
-        assert assessment is not None
-
         cash = Decimal(str(account.cash_balance))
         requested = request.notional_usd
         if requested is None:
             requested = min(limits.max_position_usd, float(cash))
         requested = round(float(requested), 6)
+        # The hard notional cap is checked before any token-level safety gate so an
+        # oversize request is always rejected with POSITION_SIZE.
         check_position_size(requested, limits)
+
+        checks = await tokens.latest_security([token.id])
+        check = checks.get(token.id)
+        assessment = assessment_from_check(check) if check is not None else None
+        check_security(assessment)
+        assert assessment is not None
 
         if await repo.open_position_for_token(account.id, token.id) is not None:
             raise RiskLimitError(
