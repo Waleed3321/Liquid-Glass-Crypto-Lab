@@ -158,11 +158,7 @@ async def _context(
 ]:
     repo = TokenRepository(session)
     ids = [token.id for token in tokens]
-    pairs: dict[int, Pair] = {}
-    for token_id in ids:
-        pair = await repo.primary_pair(token_id)
-        if pair is not None:
-            pairs[token_id] = pair
+    pairs = await repo.primary_pairs(ids)
     snapshots = await repo.latest_snapshots(ids)
     scores = await repo.latest_scores(ids)
     checks = await repo.latest_security(ids)

@@ -3,12 +3,15 @@
 from __future__ import annotations
 
 from collections.abc import AsyncIterator
+from decimal import Decimal
 
 import httpx
 import pytest
 
 from app.core.config import settings
+from app.db.session import session_scope
 from app.main import create_app
+from app.models import Pair, Token
 from app.notifications.dispatcher import NotificationDispatcher
 from app.providers.registry import Providers
 from app.scanner.runner import ScannerRunner
@@ -59,6 +62,34 @@ async def test_token_list_returns_seeded_opportunity(client, seed):
     assert row["symbol"] == "API1"
     assert row["score"]["score"] == pytest.approx(81.0)
     assert row["security"]["overall"] == "PASS"
+
+
+async def test_token_list_picks_most_liquid_pair_for_every_token(client, seed):
+    token_id = await seed(symbol="LIQ1", liquidity=5_000.0)
+    async with session_scope() as session:
+        token = await session.get(Token, token_id)
+        assert token is not None
+        session.add(
+            Pair(
+                token_id=token.id,
+                chain=token.chain,
+                pair_address="pool-deepest",
+                dex_id="raydium",
+                quote_symbol="SOL",
+                base_symbol="LIQ1",
+                price_usd=Decimal("0.002"),
+                liquidity_usd=Decimal("480000"),
+                market_cap_usd=Decimal("1000000"),
+                fdv_usd=Decimal("1000000"),
+            )
+        )
+        await session.flush()
+
+    response = await client.get("/api/v1/tokens", params={"window_hours": 6, "limit": 10})
+    assert response.status_code == 200
+    row = response.json()["tokens"][0]
+    assert row["pair"]["pair_address"] == "pool-deepest"
+    assert row["pair"]["liquidity_usd"] == pytest.approx(480_000.0)
 
 
 async def test_token_detail_and_history(client, seed):

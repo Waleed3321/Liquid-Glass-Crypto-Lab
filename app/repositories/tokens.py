@@ -68,6 +68,30 @@ class TokenRepository:
             )
         ).scalar_one_or_none()
 
+    async def primary_pairs(self, token_ids: Sequence[int]) -> dict[int, Pair]:
+        """Most liquid pair per token in one round trip (avoids per-token queries)."""
+        if not token_ids:
+            return {}
+        ranked = (
+            select(
+                Pair.id.label("pair_id"),
+                func.row_number()
+                .over(
+                    partition_by=Pair.token_id,
+                    order_by=[Pair.liquidity_usd.desc(), Pair.id.asc()],
+                )
+                .label("rn"),
+            )
+            .where(Pair.token_id.in_(token_ids))
+            .subquery()
+        )
+        rows = (
+            await self.session.execute(
+                select(Pair).join(ranked, Pair.id == ranked.c.pair_id).where(ranked.c.rn == 1)
+            )
+        ).scalars()
+        return {row.token_id: row for row in rows}
+
     async def latest_snapshot(self, pair_id: int) -> MarketSnapshot | None:
         return (
             await self.session.execute(
