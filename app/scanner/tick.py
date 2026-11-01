@@ -200,9 +200,20 @@ class ScannerEngine:
             new_token_ids: list[int] = []
             async with session_scope() as session:
                 tokens_repo = TokenRepository(session)
+                known_tokens = await tokens_repo.tokens_by_addresses(
+                    (pool.chain, pool.token_address) for pool in pools
+                )
+                known_pairs = await tokens_repo.pairs_by_addresses(
+                    (pool.chain, pool.pool_address) for pool in pools
+                )
                 for pool in pools:
-                    existing = await tokens_repo.get_by_address(pool.chain, pool.token_address)
-                    token, _pair = await tokens_repo.upsert_discovery(pool, seen_at=now)
+                    existing = known_tokens.get((pool.chain, pool.token_address))
+                    token, _pair = await tokens_repo.upsert_discovery(
+                        pool,
+                        seen_at=now,
+                        token=existing,
+                        pair=known_pairs.get((pool.chain, pool.pool_address)),
+                    )
                     if existing is None:
                         new_token_ids.append(token.id)
                         result.discovered += 1
@@ -284,41 +295,38 @@ class ScannerEngine:
         async with session_scope() as session:
             tokens = TokenRepository(session)
             trading = TradingRepository(session)
-            selected = []
-            for token_id in token_ids:
-                token = await tokens.get(token_id)
-                if token is not None:
-                    selected.append(token)
+            selected = await tokens.get_many(token_ids)
             by_id = {t.id: t for t in selected}
-            imported: list[Token] = []
 
             for token in selected:
                 quotes = quotes_by_address.get(token.address.lower()) or []
                 if quotes:
                     best = max(quotes, key=lambda q: float(q.liquidity_usd or 0))
                     await tokens.apply_quote(token, best, seen_at=now)
-                    imported.append(token)
 
+            ids = list(by_id)
+            pairs = await tokens.primary_pairs(ids)
+            latest = await tokens.latest_snapshots(ids)
             for token in selected:
-                pair = await tokens.primary_pair(token.id)
+                pair = pairs.get(token.id)
                 if pair is None:
                     continue
-                latest = await tokens.latest_snapshot(pair.id)
-                if latest is None or (now - latest.ts).total_seconds() >= 25:
-                    await tokens.add_snapshot(token, pair, ts=now, run_id=run_id)
+                snapshot = latest.get(token.id)
+                if snapshot is None or (now - snapshot.ts).total_seconds() >= 25:
+                    latest[token.id] = await tokens.add_snapshot(
+                        token, pair, ts=now, run_id=run_id
+                    )
 
             positions = await trading.all_open_positions()
             positions_by_token = {p.token_id: p for p in positions}
-            checks = await tokens.latest_security(list(by_id))
-            scores = await tokens.latest_scores(list(by_id))
+            checks = await tokens.latest_security(ids)
+            scores = await tokens.latest_scores(ids)
 
             candidates: list[Candidate] = []
             for token in selected:
-                pair = await tokens.primary_pair(token.id)
-                if pair is None:
-                    continue
-                snapshot = await tokens.latest_snapshot(pair.id)
-                if snapshot is None:
+                pair = pairs.get(token.id)
+                snapshot = latest.get(token.id)
+                if pair is None or snapshot is None:
                     continue
                 rows = await tokens.snapshots_for_pair(pair.id, since=cutoff, limit=240)
                 candidates.append(

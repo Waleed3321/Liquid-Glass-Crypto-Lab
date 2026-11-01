@@ -11,6 +11,16 @@ export default defineConfig({
   aiGateway: false,
   functions: {
     hello: { name: "Hello World", source: "./hello.ts" },
+    keepalive: { name: "Render keep-alive", source: "./keepalive.ts" },
+  },
+  triggers: {
+    // Free Render web services sleep after ~15 idle minutes; this cron keeps the
+    // API and its in-process scanner loop awake with no developer machine.
+    "render-keepalive": {
+      type: "schedule",
+      function: "keepalive",
+      cron: "*/5 * * * *",
+    },
   },
   buckets: {
     // "private" is the default; use "public_read" for anonymous reads

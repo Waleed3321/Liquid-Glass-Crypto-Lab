@@ -7,7 +7,7 @@ from datetime import datetime
 from decimal import Decimal
 from typing import Any
 
-from sqlalchemy import and_, delete, func, or_, select
+from sqlalchemy import and_, delete, func, or_, select, tuple_
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.clock import utc_now
@@ -51,6 +51,15 @@ class TokenRepository:
     async def get(self, token_id: int) -> Token | None:
         return await self.session.get(Token, token_id)
 
+    async def get_many(self, token_ids: Sequence[int]) -> list[Token]:
+        if not token_ids:
+            return []
+        return list(
+            (
+                await self.session.execute(select(Token).where(Token.id.in_(token_ids)))
+            ).scalars()
+        )
+
     async def get_by_address(self, chain: str, address: str) -> Token | None:
         return (
             await self.session.execute(
@@ -67,6 +76,32 @@ class TokenRepository:
                 .limit(1)
             )
         ).scalar_one_or_none()
+
+    async def tokens_by_addresses(
+        self, keys: Iterable[tuple[str, str]]
+    ) -> dict[tuple[str, str], Token]:
+        wanted = set(keys)
+        if not wanted:
+            return {}
+        rows = (
+            await self.session.execute(
+                select(Token).where(tuple_(Token.chain, Token.address).in_(sorted(wanted)))
+            )
+        ).scalars()
+        return {(row.chain, row.address): row for row in rows}
+
+    async def pairs_by_addresses(
+        self, keys: Iterable[tuple[str, str]]
+    ) -> dict[tuple[str, str], Pair]:
+        wanted = set(keys)
+        if not wanted:
+            return {}
+        rows = (
+            await self.session.execute(
+                select(Pair).where(tuple_(Pair.chain, Pair.pair_address).in_(sorted(wanted)))
+            )
+        ).scalars()
+        return {(row.chain, row.pair_address): row for row in rows}
 
     async def primary_pairs(self, token_ids: Sequence[int]) -> dict[int, Pair]:
         """Most liquid pair per token in one round trip (avoids per-token queries)."""
@@ -247,10 +282,17 @@ class TokenRepository:
 
     # -- writes ------------------------------------------------------------
     async def upsert_discovery(
-        self, discovery: PoolDiscovery, *, seen_at: datetime | None = None
+        self,
+        discovery: PoolDiscovery,
+        *,
+        seen_at: datetime | None = None,
+        token: Token | None = None,
+        pair: Pair | None = None,
     ) -> tuple[Token, Pair]:
+        """Persist a discovery, optionally reusing rows prefetched by the caller."""
         seen_at = seen_at or utc_now()
-        token = await self.get_by_address(discovery.chain, discovery.token_address)
+        if token is None:
+            token = await self.get_by_address(discovery.chain, discovery.token_address)
         if token is None:
             token = Token(
                 chain=discovery.chain,
@@ -274,7 +316,7 @@ class TokenRepository:
                 token.name = discovery.name
             token.is_active = True
 
-        pair = await self._upsert_pair(token, discovery)
+        pair = await self._upsert_pair(token, discovery, pair=pair)
         return token, pair
 
     async def apply_quote(self, token: Token, quote: MarketQuote, *, seen_at: datetime | None = None) -> Pair:
@@ -294,14 +336,21 @@ class TokenRepository:
         pair = await self._upsert_pair(token, quote)
         return pair
 
-    async def _upsert_pair(self, token: Token, data: PoolDiscovery | MarketQuote) -> Pair:
-        pair = (
-            await self.session.execute(
-                select(Pair).where(
-                    Pair.chain == token.chain, Pair.pair_address == data.pool_address
+    async def _upsert_pair(
+        self,
+        token: Token,
+        data: PoolDiscovery | MarketQuote,
+        *,
+        pair: Pair | None = None,
+    ) -> Pair:
+        if pair is None:
+            pair = (
+                await self.session.execute(
+                    select(Pair).where(
+                        Pair.chain == token.chain, Pair.pair_address == data.pool_address
+                    )
                 )
-            )
-        ).scalar_one_or_none()
+            ).scalar_one_or_none()
         volume = _volume_values(data.volume)
         now = utc_now()
         if pair is None:
