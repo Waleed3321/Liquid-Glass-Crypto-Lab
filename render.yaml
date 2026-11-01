@@ -1,0 +1,47 @@
+# Render Blueprint - one free web service, one worker.
+# Keep this as the only web service in the workspace: the free instance-hour
+# allowance covers a single always-on service.
+
+services:
+  - type: web
+    name: liquid-glass-crypto-lab
+    runtime: docker
+    plan: free
+    region: oregon
+    dockerfilePath: ./Dockerfile
+    dockerContext: .
+    healthCheckPath: /api/v1/health
+    autoDeploy: true
+    envVars:
+      - key: APP_ENV
+        value: production
+      - key: LOG_LEVEL
+        value: INFO
+      - key: DATABASE_URL
+        sync: false
+      - key: DATABASE_URL_UNPOOLED
+        sync: false
+      - key: CORS_ORIGINS
+        sync: false
+      - key: SCANNER_TICK_TOKEN
+        generateValue: true
+      - key: ADMIN_TOKEN
+        generateValue: true
+      - key: DISCORD_WEBHOOK_URL
+        sync: false
+      - key: DISCORD_ENABLED
+        value: "true"
+      - key: SOL_PRICE_USD
+        value: "150"
+      - key: BNB_PRICE_USD
+        value: "600"
+      - key: SCANNER_ENABLED
+        value: "true"
+      - key: SCAN_INTERVAL_SECONDS
+        value: "60"
+      - key: DISCOVERY_WINDOW_HOURS
+        value: "6"
+      - key: MIN_TICK_GAP_SECONDS
+        value: "45"
+      - key: LEASE_TTL_SECONDS
+        value: "120"

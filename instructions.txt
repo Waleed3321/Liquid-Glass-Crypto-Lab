@@ -1,0 +1,854 @@
+# MASTER DEVELOPMENT PROMPT — LIQUID GLASS CRYPTO LAB
+
+## Project goal
+
+Build a professional, intelligent, full-stack **Solana and BNB Chain New Coin Paper Trading Platform**.
+
+The platform discovers newly created tokens, evaluates opportunities, performs security checks, simulates paper trades, monitors open positions, calculates profit and loss, and sends notifications through Discord.
+
+The project must be designed for clean architecture, efficient performance, security, and deployment through **Qoder's deployment functionality using a free hosting route**.
+
+Work as a senior full-stack engineer, Python backend architect, blockchain data engineer, UI/UX designer, and DevOps engineer.
+
+Do not build a basic demo. Build a complete, well-structured, usable application.
+
+---
+
+# 1. Important user requirements
+
+Follow these requirements throughout development:
+
+- Starting virtual trading balance: **$10**
+- Supported blockchains: **Solana and BNB Chain**
+- Trading mode: **Paper trading only**
+- Trading approach: Conservative
+- Maximum simultaneous open positions: **3**
+- Maximum initial position size: **$2.50**
+- Daily maximum paper-trading loss: **$0.50**
+- Maximum acceptable simulated price impact: **1%**
+- Coin discovery window: tokens created within the previous **6 hours**
+- Scanner refresh interval: **every 60 seconds**
+- Minimum observation time before entry: **10 minutes**, configurable
+- Notifications: Discord bot or Discord webhook
+- Backend: Python and FastAPI
+- Frontend: HTML, CSS, and JavaScript
+- Database: SQLite for local development, with PostgreSQL support
+- Python environment: `uv` only; do not use Conda
+- Deployment: Qoder should handle deployment through its available deployment functionality, prioritizing a completely free route.
+
+Three positions is a maximum, not a target. Never force trades just to fill all available positions.
+
+**Absolutely no real-money trading.** Do not implement live transaction signing, wallet authorization, real swaps, deposits, withdrawals, or private-key storage.
+
+---
+
+# 2. First inspect the existing project
+
+Before writing code:
+
+1. Inspect the entire existing repository.
+2. Identify existing files, dependencies, architecture, and functionality.
+3. Preserve useful existing work.
+4. Identify missing components and architectural problems.
+5. Prepare a development plan.
+6. Implement the application in logical phases.
+7. Test each phase before moving forward.
+
+Do not unnecessarily overwrite or delete existing files.
+
+Use `uv` for dependency and environment management.
+
+---
+
+# 3. Main technology stack
+
+## Backend
+
+Use:
+
+- Python
+- FastAPI
+- Uvicorn
+- Pydantic
+- SQLAlchemy 2
+- Alembic
+- httpx
+- asyncio
+- Pandas and NumPy where useful
+- pytest
+- Ruff
+
+Build a modular backend with separate layers for:
+
+- API routes
+- Business logic
+- Services
+- Data providers
+- Repositories
+- Database models
+- Schemas
+- Strategy engine
+- Risk management
+- Paper execution
+- Background scanner
+- Notifications
+- Configuration
+
+## Frontend
+
+Use:
+
+- HTML5
+- Modern CSS
+- Vanilla JavaScript with ES modules
+- Fetch API
+- WebSockets or Server-Sent Events
+- Plotly.js for charts where useful
+
+Do not use Streamlit.
+
+Keep the frontend independent from the backend so it can be hosted separately when necessary.
+
+---
+
+# 4. Premium user interface
+
+The most important visual requirement is:
+
+**LIQUID GLASS DARK**
+
+Create a modern, premium trading dashboard inspired by:
+
+1. Liquid Glass — dominant visual identity.
+2. Glassmorphism — translucent panels, blurred backgrounds, layered surfaces.
+3. Neumorphism — subtle depth and soft controls.
+4. Brutalism — strong typography and clear data hierarchy.
+5. Skeuomorphism — realistic controls and trading indicators where appropriate.
+
+Use a consistent design system with:
+
+- Deep dark background
+- Translucent glass panels
+- Subtle borders
+- Layered shadows
+- Smooth transitions
+- High-quality typography
+- Clear positive and negative P&L indicators
+- Responsive layouts
+- Accessible contrast
+- Keyboard focus states
+- Reduced-motion support
+
+Avoid excessive animations and visual clutter. The interface must remain fast and readable.
+
+## Dashboard pages
+
+Create the following pages:
+
+1. Overview
+2. Live Scanner
+3. Token Details
+4. Watchlist
+5. Paper Portfolio
+6. Open Positions
+7. Trade History
+8. Strategy Lab
+9. Market Intelligence
+10. Notifications
+11. Settings
+
+## Overview dashboard
+
+Display:
+
+- Virtual balance
+- Available balance
+- Invested amount
+- Total unrealized P&L
+- Realized P&L
+- Daily P&L
+- Win rate
+- Number of open positions
+- Scanner status
+- Last successful scan
+- Next scheduled scan
+- Recently discovered tokens
+- Best-scoring opportunities
+- Recent paper trades
+
+Use charts and tables where they add value.
+
+## Live Scanner
+
+Display:
+
+- Token name and symbol
+- Blockchain
+- Contract address
+- Pair address
+- Token creation time
+- Token age
+- First discovered time
+- Current price
+- Liquidity
+- Market capitalization
+- Trading volume
+- Buy and sell transactions
+- Price changes
+- Security status
+- Opportunity score
+- Data confidence
+- Strategy signal
+- Reason for rejection, where applicable
+
+Include search, filters, sorting, and a token detail view.
+
+---
+
+# 5. Blockchain discovery and data sources
+
+Support Solana and BNB Chain.
+
+Use DEX Screener as the primary discovery and market-data source.
+
+Official documentation:
+
+- DEX Screener: [https://docs.dexscreener.com/](https://docs.dexscreener.com/)
+- Birdeye: [https://docs.birdeye.so/](https://docs.birdeye.so/)
+- Pump.fun: [https://pump.fun/](https://pump.fun/)
+- Four.meme: [https://four.meme/](https://four.meme/)
+- RugCheck: [https://rugcheck.xyz/](https://rugcheck.xyz/)
+- GoPlus: [https://docs.gopluslabs.io/](https://docs.gopluslabs.io/)
+- Honeypot.is: [https://docs.honeypot.is/](https://docs.honeypot.is/)
+- BscScan: [https://bscscan.com/](https://bscscan.com/)
+- Jupiter: [https://dev.jup.ag/](https://dev.jup.ag/)
+- PancakeSwap: [https://docs.pancakeswap.finance/](https://docs.pancakeswap.finance/)
+
+Use public or free API access wherever possible.
+
+Do not assume every provider has an unlimited free API. Inspect available endpoints, authentication requirements, and rate limits.
+
+Implement data-provider adapters so sources can be changed without rewriting the scanner.
+
+Handle:
+
+- API failures
+- Rate limits
+- Missing data
+- Invalid responses
+- Duplicate tokens
+- Stale market prices
+- Provider downtime
+
+Never treat missing security information as proof that a token is safe.
+
+---
+
+# 6. One-minute automatic scanner
+
+The scanner must operate independently of the browser.
+
+Requirements:
+
+- Scan every 60 seconds.
+- Discover newly created token pairs.
+- Consider tokens created within the previous 6 hours.
+- Store token creation time and first-discovered time separately.
+- Recheck existing candidates.
+- Update market data and scores.
+- Perform security checks.
+- Detect potential opportunities.
+- Update the watchlist.
+- Log all decisions.
+- Send Discord notifications for important events.
+
+Use asynchronous requests with bounded concurrency.
+
+Implement:
+
+- Request timeouts
+- Retry with exponential backoff
+- Rate-limit handling
+- Caching
+- Deduplication
+- Scanner heartbeat
+- Last successful scan
+- Next scheduled scan
+- Error logs
+- Stale-data detection
+- Graceful shutdown
+- Worker restart recovery
+
+Never start multiple competing scanner loops accidentally.
+
+The scanner must not depend on the user keeping the dashboard open.
+
+**Important:** Do not sacrifice API reliability to achieve a one-minute interval. Respect provider rate limits and use caching where appropriate.
+
+---
+
+# 7. Security analysis
+
+Perform security checks before allowing a token to become eligible for a paper-trade entry.
+
+Check available information for:
+
+- Honeypot behavior
+- Buy and sell tax
+- Mint authority
+- Freeze authority
+- Contract ownership
+- Liquidity
+- Liquidity-lock or burn information, where verifiable
+- Holder concentration
+- Top-holder distribution
+- Suspicious wallet activity
+- Dangerous contract permissions
+- Token age
+- Unusual trading patterns
+
+Use clear statuses:
+
+- PASS
+- WARNING
+- FAIL
+- UNKNOWN
+- UNAVAILABLE
+
+Apply conservative rules:
+
+- Critical security failure: reject.
+- Critical security information unavailable: do not enter.
+- Suspicious liquidity or ownership: reject or flag.
+- Uncertain data: lower confidence and avoid automatic entry.
+
+Display the reasons behind every security decision.
+
+Do not claim that any security checker guarantees a token is safe.
+
+---
+
+# 8. Intelligent opportunity scoring
+
+Create a scoring engine with a score from 0 to 100.
+
+Initial weighted scoring:
+
+| Metric                     | Weight |
+| -------------------------- | -----: |
+| Liquidity quality          |     25 |
+| Trading volume             |     20 |
+| Buy/sell activity          |     15 |
+| Holder distribution        |     15 |
+| Momentum quality           |     15 |
+| Security data completeness |     10 |
+
+Also calculate separate values for:
+
+- Opportunity score
+- Security risk
+- Data confidence
+- Entry signal strength
+
+Avoid relying on one metric.
+
+Do not rank tokens highly simply because they have experienced a sudden price spike.
+
+Explain why a token received its score.
+
+Record rejected opportunities as well as accepted ones so that the strategy can be evaluated later.
+
+---
+
+# 9. Paper trading engine
+
+The trading engine must simulate trades only.
+
+Initialize the virtual account with $10.
+
+Enforce these limits on the backend:
+
+- Maximum 3 simultaneous positions.
+- Maximum $2.50 initial position size.
+- Maximum $0.50 daily loss.
+- Maximum 1% simulated price impact.
+- No leverage.
+- No borrowed funds.
+- No real-money orders.
+
+Enforce the rules transactionally to prevent simultaneous requests from bypassing risk limits.
+
+The engine must simulate:
+
+- Entry price
+- Exit price
+- Position quantity
+- Network fees
+- DEX or aggregator fees
+- Slippage
+- Price impact
+- Token taxes where known
+- Partial exits
+- Remaining position quantity
+- Realized P&L
+- Unrealized P&L
+- Net P&L after estimated costs
+
+Clearly label estimated costs as estimates.
+
+Do not assume that a paper trade can execute at the displayed market price. Use available read-only quotes and realistic execution assumptions.
+
+Reject a paper order when:
+
+- The token fails security rules.
+- Market data is stale.
+- Price impact exceeds the limit.
+- The daily loss limit is reached.
+- The maximum number of positions is already open.
+- The required balance is unavailable.
+
+---
+
+# 10. Trading strategy
+
+Implement the first strategy as:
+
+**Strategy A — Conservative Momentum Pullback**
+
+The process:
+
+1. Discover a token within the previous six hours.
+2. Observe it for at least 10 minutes.
+3. Collect multiple market snapshots.
+4. Verify liquidity and volume.
+5. Run security checks.
+6. Evaluate buying and selling activity.
+7. Identify a meaningful upward trend.
+8. Wait for a pullback rather than chasing a sudden spike.
+9. Look for price stabilization and recovery.
+10. Evaluate risk and estimated execution costs.
+11. Enter a paper trade only when all configured conditions pass.
+
+Avoid:
+
+- Buying straight into a vertical candle.
+- Entering a token with rapidly disappearing liquidity.
+- Entering when data is stale.
+- Entering on incomplete critical security checks.
+- Overtrading.
+- Forcing trades to fill available positions.
+
+Make thresholds configurable through Settings.
+
+## Initial exit rules
+
+Implement configurable profit and risk management:
+
+- At +30%: begin monitoring for profit protection.
+- At +50%: sell 50% of the remaining simulated position.
+- At +100%: close the remaining position.
+- Exit earlier when there is a significant momentum breakdown, liquidity deterioration, or security warning.
+
+Also implement configurable stop-loss and trailing-stop rules.
+
+Make all exit operations idempotent. Never sell more quantity than the position actually holds.
+
+---
+
+# 11. Discord notifications
+
+Use Discord webhooks or a Discord bot.
+
+Documentation:
+
+[https://discord.com/developers/docs/resources/webhook](https://discord.com/developers/docs/resources/webhook)
+
+Send notifications for:
+
+- New high-scoring token
+- Security failure
+- Security warning
+- Paper-trade entry
+- Partial profit-taking
+- Full exit
+- Stop-loss
+- Daily loss limit reached
+- Scanner failure
+- Scanner recovery
+- Deployment or service health problems where appropriate
+
+Include:
+
+- Token name and symbol
+- Blockchain
+- Contract address
+- Current price
+- Opportunity score
+- Security status
+- Paper-trade size
+- Entry or exit reason
+- Simulated P&L
+
+Store Discord secrets in environment variables. Never hardcode secrets.
+
+The application must continue working if Discord is temporarily unavailable.
+
+---
+
+# 12. FastAPI architecture
+
+Use a clean, modular architecture.
+
+Suggested structure:
+
+```text
+liquid-glass-crypto-lab/
+│
+├── app/
+│   ├── main.py
+│   ├── core/
+│   │   ├── config.py
+│   │   ├── logging.py
+│   │   └── security.py
+│   │
+│   ├── api/
+│   │   └── v1/
+│   │       ├── health.py
+│   │       ├── scanner.py
+│   │       ├── tokens.py
+│   │       ├── watchlist.py
+│   │       ├── portfolio.py
+│   │       ├── trades.py
+│   │       ├── analytics.py
+│   │       ├── settings.py
+│   │       └── notifications.py
+│   │
+│   ├── models/
+│   ├── schemas/
+│   ├── repositories/
+│   ├── services/
+│   ├── providers/
+│   ├── scanner/
+│   ├── strategies/
+│   ├── risk/
+│   ├── execution/
+│   ├── notifications/
+│   └── db/
+│
+├── frontend/
+│   ├── index.html
+│   ├── pages/
+│   ├── css/
+│   ├── js/
+│   └── assets/
+│
+├── tests/
+├── scripts/
+├── migrations/
+├── .env.example
+├── .gitignore
+├── pyproject.toml
+├── uv.lock
+├── README.md
+└── Dockerfile
+```
+
+Adjust the structure when technically justified, but maintain separation of responsibilities.
+
+Use:
+
+- Dependency injection
+- Pydantic validation
+- Service and repository patterns
+- Centralized configuration
+- Structured logging
+- Database migrations
+- API versioning
+- Error handling
+- Type hints
+- Docstrings for important components
+
+---
+
+# 13. Database design
+
+Use SQLAlchemy models and migrations.
+
+Create appropriate tables for:
+
+- Tokens
+- Pairs
+- Market snapshots
+- Security checks
+- Opportunity scores
+- Watchlist
+- Paper accounts
+- Positions
+- Orders
+- Fills
+- Strategy decisions
+- Daily performance
+- Scanner runs
+- Notifications
+- Application settings
+
+Persist decisions and historical data.
+
+The system must recover open paper positions and scanner state after a restart.
+
+Use SQLite locally and support PostgreSQL in deployment.
+
+---
+
+# 14. API endpoints
+
+Create versioned endpoints under `/api/v1`.
+
+At minimum:
+
+```text
+GET  /health
+GET  /scanner/status
+POST /scanner/start
+POST /scanner/stop
+
+GET  /tokens
+GET  /tokens/{token_id}
+GET  /tokens/{token_id}/history
+
+GET  /watchlist
+POST /watchlist
+DELETE /watchlist/{token_id}
+
+GET  /portfolio
+GET  /portfolio/positions
+GET  /portfolio/performance
+
+POST /paper-trades/buy
+POST /paper-trades/sell
+GET  /paper-trades/history
+
+GET  /strategies
+PUT  /strategies/settings
+
+GET  /analytics
+GET  /notifications
+PUT  /settings
+```
+
+Add real-time updates using WebSockets or Server-Sent Events where useful.
+
+Validate every request. Enforce all financial and risk restrictions on the backend, not just in the frontend.
+
+---
+
+# 15. Testing and reliability
+
+Write tests for:
+
+- Initial $10 balance
+- Maximum 3 open positions
+- Rejection of a fourth position
+- Maximum $2.50 initial position
+- Daily loss limit
+- Fee calculations
+- Slippage calculations
+- Price impact checks
+- Partial exits
+- Full exits
+- Realized and unrealized P&L
+- Duplicate orders
+- Stale market data
+- Security failures
+- Missing security information
+- Scanner restart recovery
+- Provider rate limits
+- Discord failures
+- Database persistence
+- Concurrent order requests
+
+Run tests and fix failures before considering the project complete.
+
+Do not use fake success responses to make tests pass.
+
+---
+
+# 16. CRITICAL: QODER MUST HANDLE DEPLOYMENT
+
+**Do not make me manually choose between Render, Vercel, Railway, or other hosting providers. Qoder must inspect its available deployment functionality and handle the deployment process.**
+
+First inspect Qoder's built-in deployment tools, supported hosting providers, account integrations, deployment workflow, and available free-tier options.
+
+Then:
+
+1. Identify the best deployment route available directly through Qoder.
+2. Check whether the route supports the FastAPI backend, frontend, database, and scheduled scanner.
+3. Verify the provider's current free-tier limits and restrictions.
+4. Choose the best genuinely free architecture that can support as much of the requested functionality as possible.
+5. Configure the project for that architecture.
+6. Prepare deployment configuration and environment variables.
+7. Build and deploy the frontend and backend.
+8. Configure database persistence.
+9. Configure the scanner to run automatically.
+10. Configure Discord notifications.
+11. Run deployment health checks.
+12. Test the deployed application.
+13. Provide the live URLs and deployment instructions.
+
+## Strict free-deployment requirements
+
+- Prioritize a $0 hosting solution.
+- Do not select paid hosting when a suitable free option exists.
+- Do not purchase a domain.
+- Do not enable paid subscriptions, paid upgrades, or usage-based services.
+- Do not enter payment details or authorize charges.
+- Do not use paid API plans.
+- Prefer free APIs and free database tiers.
+- Keep API keys and secrets in deployment environment variables.
+- Do not expose secrets in frontend code or public repositories.
+- Explain any free-tier limitations clearly.
+- Never claim that deployment is free without checking the provider's current limits.
+
+**The one-minute scanner is a critical requirement.** Verify that the selected free hosting arrangement can actually run the scanner every 60 seconds. Check sleep behavior, scheduled execution restrictions, background-worker restrictions, execution time limits, and database persistence.
+
+Do not deploy an architecture that silently stops scanning when the user closes the browser.
+
+If no completely free hosting option supports the entire application continuously:
+
+- Find the closest genuinely free architecture.
+- Preserve the requested one-minute scanning functionality wherever technically possible.
+- Explain exactly which functionality is limited by the free provider.
+- Offer a free alternative, such as a different deployment architecture or an externally scheduled scanner, when supported.
+- Do not pretend that a sleeping or suspended service is continuously running.
+- Do not silently change the scanner interval.
+- Do not activate a paid service to solve the limitation.
+
+If Qoder cannot directly deploy to a suitable provider, inspect the deployment options it can access and use the best supported free alternative. Only ask me to complete an external authorization step when Qoder genuinely requires my permission.
+
+Do not request passwords or private credentials in chat. Use secure provider authorization flows and environment-variable configuration.
+
+## Deployment verification
+
+After deployment, verify:
+
+- Frontend URL loads.
+- FastAPI health endpoint responds.
+- Database connects.
+- Database data persists after restart, within the provider's guarantees.
+- Scanner starts correctly.
+- Scanner heartbeat updates.
+- One-minute scanning is genuinely functioning.
+- Discord notifications work.
+- API routes respond correctly.
+- Risk limits remain enforced.
+- No real-money transaction functionality exists.
+
+Provide a deployment report showing:
+
+- Hosting provider
+- Deployment architecture
+- Frontend URL
+- Backend URL
+- Database choice
+- Scanner execution method
+- Verified scan interval
+- Free-tier limitations
+- Any manual authorization steps still required
+
+Do not report a successful deployment until the live services have actually been tested.
+
+---
+
+# 17. Development workflow
+
+Complete the project in these phases.
+
+**Phase 1 — Repository inspection**
+
+Inspect existing code and create an implementation plan.
+
+**Phase 2 — Backend foundation**
+
+Build FastAPI, configuration, database, models, schemas, repositories, and health endpoints.
+
+**Phase 3 — Data providers**
+
+Implement Solana and BNB data-provider adapters, error handling, caching, and rate limits.
+
+**Phase 4 — Scanner**
+
+Implement the independent one-minute scanner, six-hour token discovery window, persistence, and logging.
+
+**Phase 5 — Security and scoring**
+
+Implement security checks, opportunity scoring, data confidence, and rejection reasons.
+
+**Phase 6 — Paper trading**
+
+Implement the virtual account, position management, execution simulation, fees, and risk controls.
+
+**Phase 7 — Strategy engine**
+
+Implement Conservative Momentum Pullback and exit management.
+
+**Phase 8 — Frontend**
+
+Build the complete Liquid Glass Dark dashboard and connect it to FastAPI.
+
+**Phase 9 — Discord**
+
+Implement notifications and failure handling.
+
+**Phase 10 — Testing**
+
+Run automated tests, fix errors, and test the complete application locally.
+
+**Phase 11 — Qoder deployment**
+
+Use Qoder's deployment functionality to select and execute the best free hosting route. Verify the live application.
+
+**Phase 12 — Documentation**
+
+Write a detailed README explaining setup, configuration, architecture, testing, usage, and deployment.
+
+A complete guide to setup the Discord Bot from zero to end.
+
+Do not skip a phase just to produce something quickly.
+
+---
+
+# 18. Final deliverables
+
+The completed project must include:
+
+- Working FastAPI backend
+- Responsive Liquid Glass Dark frontend
+- Solana token discovery
+- BNB Chain token discovery
+- Automatic one-minute scanner
+- Six-hour discovery window
+- Security analysis
+- Opportunity scoring
+- Conservative strategy
+- Paper trading engine
+- Portfolio tracking
+- Risk management
+- Discord notifications
+- Persistent database
+- Automated tests
+- `.env.example`
+- `uv` setup
+- Dockerfile where appropriate
+- README
+- Qoder-managed deployment configuration
+- Verified live deployment, if supported by an available free route
+
+## Final instruction
+
+Build this as a real, maintainable application, not a mockup.
+
+Prioritize correctness, security, clean architecture, realistic paper-trading calculations, reliable scanning, and an excellent user experience.
+
+**Qoder is responsible for inspecting the project, implementing it, testing it, selecting the free deployment route, configuring it, deploying it, and verifying the live application.**
+
+Do not stop after generating code or deployment configuration. Complete the actual deployment steps that Qoder can perform, and clearly report anything that requires my authorization or cannot be achieved on a free tier.

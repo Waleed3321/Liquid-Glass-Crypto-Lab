@@ -1,0 +1,128 @@
+/* ==========================================================================
+   Liquid Glass Dark — design tokens
+   ========================================================================== */
+
+:root {
+  color-scheme: dark;
+
+  /* Base surfaces */
+  --bg-abyss: #04060f;
+  --bg-deep: #070b18;
+  --bg-navy: #0a1024;
+  --bg-panel: rgba(16, 23, 44, 0.62);
+  --bg-panel-strong: rgba(20, 29, 54, 0.82);
+  --bg-panel-soft: rgba(255, 255, 255, 0.035);
+  --bg-input: rgba(6, 10, 22, 0.72);
+  --bg-hover: rgba(255, 255, 255, 0.055);
+
+  /* Strokes */
+  --stroke: rgba(255, 255, 255, 0.08);
+  --stroke-strong: rgba(255, 255, 255, 0.16);
+  --stroke-faint: rgba(255, 255, 255, 0.045);
+  --highlight: rgba(255, 255, 255, 0.22);
+
+  /* Text */
+  --text: #eaf0ff;
+  --text-dim: #a8b4d0;
+  --text-muted: #6d7a99;
+  --text-faint: #4b5670;
+
+  /* Accents */
+  --accent: #6fa8ff;
+  --accent-bright: #8ec5ff;
+  --accent-deep: #3f6fd8;
+  --violet: #a78bfa;
+  --cyan: #5be7ff;
+  --mint: #34e5b0;
+  --green: #31e0a0;
+  --red: #ff5c7a;
+  --amber: #ffc65c;
+  --danger-bg: rgba(255, 92, 122, 0.12);
+  --success-bg: rgba(49, 224, 160, 0.12);
+  --warning-bg: rgba(255, 198, 92, 0.12);
+  --info-bg: rgba(111, 168, 255, 0.12);
+
+  /* Gradients */
+  --aurora-a: radial-gradient(60% 60% at 12% 4%, rgba(63, 111, 216, 0.34), transparent 70%);
+  --aurora-b: radial-gradient(50% 55% at 88% 10%, rgba(167, 139, 250, 0.22), transparent 72%);
+  --aurora-c: radial-gradient(45% 45% at 60% 100%, rgba(91, 231, 255, 0.12), transparent 70%);
+  --grad-accent: linear-gradient(135deg, #8ec5ff 0%, #6fa8ff 42%, #a78bfa 100%);
+  --grad-mint: linear-gradient(135deg, #7ff5cf 0%, #31e0a0 100%);
+  --grad-danger: linear-gradient(135deg, #ff8ea3 0%, #ff5c7a 100%);
+  --grad-glass: linear-gradient(
+    160deg,
+    rgba(255, 255, 255, 0.09) 0%,
+    rgba(255, 255, 255, 0.025) 38%,
+    rgba(255, 255, 255, 0.006) 100%
+  );
+
+  /* Shadows */
+  --shadow-xs: 0 1px 2px rgba(0, 0, 0, 0.35);
+  --shadow-sm: 0 6px 18px rgba(0, 0, 0, 0.28), 0 1px 0 rgba(255, 255, 255, 0.05) inset;
+  --shadow-md: 0 18px 44px rgba(0, 0, 0, 0.4), 0 1px 0 rgba(255, 255, 255, 0.07) inset;
+  --shadow-lg: 0 34px 90px rgba(0, 0, 0, 0.55), 0 1px 0 rgba(255, 255, 255, 0.09) inset;
+  --shadow-glow: 0 0 0 1px rgba(111, 168, 255, 0.32), 0 16px 48px rgba(63, 111, 216, 0.28);
+  --shadow-neu: 8px 8px 20px rgba(0, 0, 0, 0.45), -8px -8px 20px rgba(255, 255, 255, 0.028);
+
+  /* Geometry */
+  --radius-xs: 8px;
+  --radius-sm: 12px;
+  --radius: 18px;
+  --radius-lg: 26px;
+  --radius-pill: 999px;
+  --blur: 26px;
+  --blur-heavy: 44px;
+
+  /* Rhythm */
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 22px;
+  --space-6: 30px;
+  --space-7: 42px;
+  --space-8: 60px;
+
+  /* Type */
+  --font-sans: "Inter", "SF Pro Display", "Segoe UI", system-ui, -apple-system, sans-serif;
+  --font-mono: "JetBrains Mono", "SFMono-Regular", "Cascadia Mono", ui-monospace, monospace;
+  --text-2xs: 0.66rem;
+  --text-xs: 0.72rem;
+  --text-sm: 0.82rem;
+  --text-base: 0.94rem;
+  --text-md: 1.06rem;
+  --text-lg: 1.28rem;
+  --text-xl: 1.62rem;
+  --text-2xl: 2.1rem;
+  --text-3xl: 2.8rem;
+  --text-hero: 3.4rem;
+  --tracking-label: 0.16em;
+
+  /* Motion */
+  --ease: cubic-bezier(0.22, 1, 0.36, 1);
+  --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
+  --fast: 140ms;
+  --normal: 240ms;
+  --slow: 480ms;
+
+  /* Layout */
+  --sidebar-w: 254px;
+  --topbar-h: 74px;
+  --content-max: 1560px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  :root {
+    --fast: 0ms;
+    --normal: 0ms;
+    --slow: 0ms;
+  }
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+    scroll-behavior: auto !important;
+  }
+}

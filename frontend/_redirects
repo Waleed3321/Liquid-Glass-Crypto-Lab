@@ -1,0 +1,5 @@
+# Static host fallbacks. The dashboard is a hash-routed SPA: every deep link
+# resolves to index.html, which then reads location.hash.
+/*
+  /index.html
+  200

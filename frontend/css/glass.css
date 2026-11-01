@@ -1,0 +1,129 @@
+/* ==========================================================================
+   Glass surfaces
+   ========================================================================== */
+
+.glass {
+  position: relative;
+  background: var(--bg-panel);
+  border: 1px solid var(--stroke);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow-md);
+  backdrop-filter: blur(var(--blur)) saturate(150%);
+  -webkit-backdrop-filter: blur(var(--blur)) saturate(150%);
+}
+
+.glass::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background: var(--grad-glass);
+  pointer-events: none;
+  opacity: 0.9;
+}
+
+.glass > * {
+  position: relative;
+  z-index: 1;
+}
+
+.glass-lg {
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-lg);
+  backdrop-filter: blur(var(--blur-heavy)) saturate(160%);
+  -webkit-backdrop-filter: blur(var(--blur-heavy)) saturate(160%);
+}
+
+.glass-soft {
+  background: var(--bg-panel-soft);
+  border: 1px solid var(--stroke-faint);
+  border-radius: var(--radius-sm);
+  box-shadow: none;
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+}
+
+.glass-inset {
+  background: var(--bg-input);
+  border: 1px solid var(--stroke-faint);
+  border-radius: var(--radius-sm);
+  box-shadow:
+    inset 0 1px 2px rgba(0, 0, 0, 0.55),
+    inset 0 -1px 0 rgba(255, 255, 255, 0.03);
+}
+
+/* Edge light: a single specular line along the top of a panel */
+.edge-light {
+  position: relative;
+  overflow: hidden;
+}
+
+.edge-light::after {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 8%;
+  right: 8%;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, var(--highlight), transparent);
+  pointer-events: none;
+}
+
+/* Aurora orb used behind hero panels */
+.orb {
+  position: absolute;
+  border-radius: 50%;
+  filter: blur(70px);
+  opacity: 0.5;
+  pointer-events: none;
+  z-index: 0;
+}
+
+.orb-blue {
+  width: 340px;
+  height: 340px;
+  background: radial-gradient(circle, rgba(63, 111, 216, 0.55), transparent 68%);
+}
+
+.orb-violet {
+  width: 280px;
+  height: 280px;
+  background: radial-gradient(circle, rgba(167, 139, 250, 0.42), transparent 70%);
+}
+
+.orb-mint {
+  width: 240px;
+  height: 240px;
+  background: radial-gradient(circle, rgba(49, 224, 160, 0.3), transparent 70%);
+}
+
+/* Neumorphic control */
+.neu {
+  background: linear-gradient(150deg, rgba(255, 255, 255, 0.06), rgba(255, 255, 255, 0.012));
+  border: 1px solid var(--stroke);
+  border-radius: var(--radius-sm);
+  box-shadow: var(--shadow-neu);
+  transition:
+    transform var(--fast) var(--ease),
+    box-shadow var(--fast) var(--ease),
+    border-color var(--fast) var(--ease);
+}
+
+.neu:hover {
+  border-color: var(--stroke-strong);
+}
+
+.neu:active {
+  box-shadow:
+    inset 4px 4px 10px rgba(0, 0, 0, 0.5),
+    inset -4px -4px 10px rgba(255, 255, 255, 0.02);
+  transform: translateY(1px);
+}
+
+/* Divider */
+.divider {
+  height: 1px;
+  background: linear-gradient(90deg, transparent, var(--stroke), transparent);
+  border: 0;
+  margin: var(--space-4) 0;
+}

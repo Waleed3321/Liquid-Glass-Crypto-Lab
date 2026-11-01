@@ -1,0 +1,150 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <title>Liquid Glass Crypto Lab — Paper Trading Desk</title>
+    <meta
+      name="description"
+      content="Liquid Glass Crypto Lab: a paper-only Solana and BNB Chain new-coin research desk with a 60-second scanner, security screening and simulated execution. No wallets, no real funds."
+    />
+    <meta name="theme-color" content="#05070f" />
+    <meta name="color-scheme" content="dark" />
+    <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Cdefs%3E%3ClinearGradient id='g' x1='0' y1='0' x2='1' y2='1'%3E%3Cstop offset='0' stop-color='%238ec5ff'/%3E%3Cstop offset='1' stop-color='%23a78bfa'/%3E%3C/linearGradient%3E%3C/defs%3E%3Crect width='32' height='32' rx='9' fill='url(%23g)'/%3E%3Crect x='11' y='11' width='10' height='10' rx='3' transform='rotate(45 16 16)' fill='%23060a16'/%3E%3C/svg%3E" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="css/tokens.css" />
+    <link rel="stylesheet" href="css/base.css" />
+    <link rel="stylesheet" href="css/glass.css" />
+    <link rel="stylesheet" href="css/components.css" />
+    <link rel="stylesheet" href="css/layout.css" />
+    <link rel="stylesheet" href="css/pages.css" />
+    <script src="config.js"></script>
+    <script src="vendor/plotly.min.js" defer></script>
+  </head>
+  <body>
+    <a class="skip-link" href="#view">Skip to content</a>
+
+    <div class="app" id="app">
+      <div class="scrim" id="scrim" aria-hidden="true"></div>
+
+      <aside class="sidebar" id="sidebar" aria-label="Primary navigation">
+        <a class="brand" href="#/overview" aria-label="Liquid Glass Crypto Lab home">
+          <span class="brand-mark" aria-hidden="true"></span>
+          <span class="brand-text">
+            <span class="brand-name">Liquid Glass</span>
+            <span class="brand-sub">Crypto Lab</span>
+          </span>
+        </a>
+
+        <nav class="nav" id="nav">
+          <div class="nav-group-label">Desk</div>
+          <a class="nav-link" data-route="overview" href="#/overview">
+            <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><rect x="3" y="3" width="7.5" height="7.5" rx="2"/><rect x="13.5" y="3" width="7.5" height="7.5" rx="2"/><rect x="3" y="13.5" width="7.5" height="7.5" rx="2"/><rect x="13.5" y="13.5" width="7.5" height="7.5" rx="2"/></svg>
+            <span>Overview</span>
+          </a>
+          <a class="nav-link" data-route="scanner" href="#/scanner">
+            <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.6-3.6"/><path d="M8 11h6M11 8v6"/></svg>
+            <span>Live Scanner</span>
+            <span class="nav-badge" id="nav-scanner-count">0</span>
+          </a>
+          <a class="nav-link" data-route="watchlist" href="#/watchlist">
+            <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="m12 3 2.7 5.6 6.1.9-4.4 4.3 1 6.1-5.4-2.9-5.4 2.9 1-6.1L3.2 9.5l6.1-.9L12 3Z"/></svg>
+            <span>Watchlist</span>
+          </a>
+
+          <div class="nav-group-label">Paper book</div>
+          <a class="nav-link" data-route="portfolio" href="#/portfolio">
+            <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M3 7.5A2.5 2.5 0 0 1 5.5 5H18a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2H5.5A2.5 2.5 0 0 1 3 16.5v-9Z"/><path d="M3 9h17"/><circle cx="16.5" cy="13.5" r="1.1"/></svg>
+            <span>Paper Portfolio</span>
+          </a>
+          <a class="nav-link" data-route="positions" href="#/positions">
+            <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M4 18V9M10 18V5M16 18v-6M22 18H2"/></svg>
+            <span>Open Positions</span>
+            <span class="nav-badge" id="nav-position-count">0</span>
+          </a>
+          <a class="nav-link" data-route="history" href="#/history">
+            <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M3 12a9 9 0 1 0 3-6.7"/><path d="M3 4v5h5"/><path d="M12 8v4l3 2"/></svg>
+            <span>Trade History</span>
+          </a>
+
+          <div class="nav-group-label">Research</div>
+          <a class="nav-link" data-route="strategy" href="#/strategy">
+            <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M4 4v16h16"/><path d="m7 15 4-5 3 3 4-6"/></svg>
+            <span>Strategy Lab</span>
+          </a>
+          <a class="nav-link" data-route="intelligence" href="#/intelligence">
+            <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M12 3v3M12 18v3M3 12h3M18 12h3M5.6 5.6l2.1 2.1M16.3 16.3l2.1 2.1M18.4 5.6l-2.1 2.1M7.7 16.3l-2.1 2.1"/><circle cx="12" cy="12" r="3.4"/></svg>
+            <span>Market Intelligence</span>
+          </a>
+          <a class="nav-link" data-route="notifications" href="#/notifications">
+            <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M18 9a6 6 0 1 0-12 0c0 5-2 6-2 6h16s-2-1-2-6Z"/><path d="M10.5 20a2 2 0 0 0 3 0"/></svg>
+            <span>Notifications</span>
+            <span class="nav-badge" id="nav-notify-count">0</span>
+          </a>
+          <a class="nav-link" data-route="settings" href="#/settings">
+            <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .34 1.87l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.7 1.7 0 0 0-1.87-.34 1.7 1.7 0 0 0-1.03 1.56V21a2 2 0 1 1-4 0v-.09A1.7 1.7 0 0 0 9 19.4a1.7 1.7 0 0 0-1.87.34l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06A1.7 1.7 0 0 0 4.6 15a1.7 1.7 0 0 0-1.56-1.03H3a2 2 0 1 1 0-4h.09A1.7 1.7 0 0 0 4.6 9a1.7 1.7 0 0 0-.34-1.87l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.7 1.7 0 0 0 9 4.6 1.7 1.7 0 0 0 10.03 3V3a2 2 0 1 1 4 0v.09A1.7 1.7 0 0 0 15 4.6a1.7 1.7 0 0 0 1.87-.34l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06A1.7 1.7 0 0 0 19.4 9v.09A1.7 1.7 0 0 0 21 10.03H21a2 2 0 1 1 0 4h-.09A1.7 1.7 0 0 0 19.4 15Z"/></svg>
+            <span>Settings</span>
+          </a>
+
+          <div class="nav-group-label">Token</div>
+          <a class="nav-link" data-route="token" href="#/scanner" id="nav-token-link" hidden>
+            <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><circle cx="12" cy="12" r="8"/><path d="M12 8v8M8 12h8"/></svg>
+            <span>Token Details</span>
+          </a>
+        </nav>
+
+        <div class="sidebar-footer">
+          <div class="scanner-pill">
+            <span class="connection" id="sidebar-scan-state">
+              <span class="dot"></span><span id="sidebar-scan-text">Scanner</span>
+            </span>
+          </div>
+          <div class="sidebar-note">
+            Paper trading only. No wallets, no private keys, no real orders — ever.
+          </div>
+        </div>
+      </aside>
+
+      <div class="main">
+        <header class="topbar">
+          <button class="menu-toggle" id="menu-toggle" aria-label="Toggle navigation" aria-expanded="false" aria-controls="sidebar">
+            <span></span>
+          </button>
+          <div class="topbar-title">
+            <span class="crumb" id="page-crumb">Desk</span>
+            <h1 id="page-title">Overview</h1>
+          </div>
+          <div class="topbar-actions">
+            <span class="connection hide-sm" id="scan-connection">
+              <span class="dot"></span><span id="scan-connection-text">Scanner</span>
+            </span>
+            <span class="connection" id="stream-connection">
+              <span class="dot"></span><span id="stream-connection-text">Live</span>
+            </span>
+            <button class="btn btn-sm btn-ghost" id="refresh-btn" title="Refresh this page">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M21 12a9 9 0 1 1-3-6.7"/><path d="M21 4v5h-5"/></svg>
+              <span class="hide-sm">Refresh</span>
+            </button>
+          </div>
+        </header>
+
+        <main class="content" id="view" tabindex="-1" aria-live="polite">
+          <div class="panel glass">
+            <div class="skeleton skeleton-row" style="width: 40%"></div>
+            <div class="skeleton skeleton-row" style="width: 70%"></div>
+            <div class="skeleton skeleton-row" style="width: 55%"></div>
+          </div>
+        </main>
+      </div>
+    </div>
+
+    <div class="toast-stack" id="toast-stack" role="status" aria-live="polite"></div>
+
+    <script type="module" src="js/main.js"></script>
+  </body>
+</html>

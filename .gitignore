@@ -1,0 +1,30 @@
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+.pytest_cache/
+.ruff_cache/
+.mypy_cache/
+
+# Local data
+data/
+*.db
+*.db-shm
+*.db-wal
+.env
+.env.*
+!.env.example
+.deploy.env
+
+# Frontend build output
+dist/
+node_modules/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+logs/
+.neon
